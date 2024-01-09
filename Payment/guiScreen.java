@@ -134,7 +134,7 @@ public class guiScreen {
 		
 	//2
 		Object[][] data = { //receiptItem
-				{"진료비", "10000원")},
+				{"진료비", "10000원"},
 				{"진단서", "20000원"}, //searchResult.getFee()
 				{"총 금액", "30000원"}
 		};
