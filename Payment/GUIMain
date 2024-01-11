@@ -1,0 +1,393 @@
+package oop_kiosk_medihub;
+
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.time.LocalDate;
+
+import javax.swing.*;
+import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableModel;
+
+public class MainFrame {
+	private JFrame frame;
+    private CardLayout cardLayout;
+    private JPanel cardPanel;
+    private DataUpdater dataUpdater;
+
+    public MainFrame() {
+        initialize();
+    }
+
+    private void initialize() {
+        frame = new JFrame();
+        frame.setBounds(100, 100, 1000, 700);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        cardLayout = new CardLayout(); // 패널간 화면전환을 위한 레이아웃
+        cardPanel = new JPanel(cardLayout);
+
+        dataUpdater = new DataUpdater();
+
+        Panel1 panel1 = new Panel1(dataUpdater, cardLayout, cardPanel);
+        Panel2 panel2 = new Panel2(dataUpdater, cardLayout, cardPanel);
+        Panel3 panel3 = new Panel3(dataUpdater, cardLayout, cardPanel);
+        Panel4 panel4 = new Panel4(dataUpdater, cardLayout, cardPanel);
+        // Add other panels as needed...
+
+        cardPanel.add(panel1.getPanel(), "panel1");
+        cardPanel.add(panel2.getPanel(), "panel2");
+        cardPanel.add(panel3.getPanel(), "panel3");
+        cardPanel.add(panel4.getPanel(), "panel4");
+        // Add other panels as needed...
+
+        frame.getContentPane().add(cardPanel, BorderLayout.CENTER);
+
+        // Set the initial panel to be shown
+        cardLayout.show(cardPanel, "panel1");
+    }
+
+    public void showFrame() {
+        EventQueue.invokeLater(() -> {
+            try {
+                frame.setVisible(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public static void main(String[] args) {
+        EventQueue.invokeLater(() -> {
+            try {
+                MainFrame window = new MainFrame();
+                window.showFrame();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+}
+
+class Panel1 {// 첫 번째 패널 (첫 번째 화면)
+	private JPanel panel1;
+	private JTextField textField;
+	private JFrame frame;
+	
+	public Panel1(DataUpdater dataUpdater, CardLayout cardLayout, JPanel cardPanel) {
+		initialize(dataUpdater, cardLayout, cardPanel);
+		
+	}
+	public void initialize(DataUpdater dataUpdater, CardLayout cardLayout, JPanel cardPanel) {
+        panel1 = new JPanel();
+        panel1.setForeground(new Color(192, 192, 192));
+        panel1.setLayout(null);
+        JLabel lb1 = new JLabel("본인 확인");
+        lb1.setBounds(100, 100, 111, 43);
+        lb1.setFont(new Font("나눔스퀘어 ExtraBold", Font.PLAIN, 28));
+        panel1.add(lb1);
+        
+        JButton btnBack = new JButton("뒤로");
+		btnBack.setBounds(100, 400, 100, 85);
+		btnBack.setBackground(new Color(192, 192, 192));
+		btnBack.setFont(new Font("나눔스퀘어 Bold", Font.PLAIN, 25));
+		// 뒤로가기 버튼에 대한 이벤트 리스너 추가 : 버튼 클릭시 실행될 코드
+		btnBack.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				//back to home Screen.
+			}
+		});
+		
+		JLabel lb = new JLabel("접수자 등록번호를 입력해주세요");      
+		lb.setBounds(100, 150, 423, 43);
+		lb.setFont(new Font("나눔스퀘어 Bold", Font.PLAIN, 25));
+		panel1.add(lb);
+		
+		textField = new JTextField();
+		textField.setBounds(100, 220, 266, 43);
+		textField.setFont(new Font("나눔스퀘어 Bold", Font.PLAIN, 22));
+		
+		JLabel lb_checking = new JLabel("확인 중 ...");
+        lb_checking.setHorizontalAlignment(SwingConstants.CENTER);
+        lb_checking.setForeground(new Color(0, 0, 0));
+        lb_checking.setFont(new Font("나눔스퀘어 Light", Font.PLAIN, 20));
+        lb_checking.setBounds(100, 350, 272, 32);
+        lb_checking.setVisible(false); 
+		
+		JButton btnNext = new JButton("다음");
+		btnNext.setBounds(211, 400, 155, 85);
+		btnNext.setBackground(new Color(27, 188, 155));
+		btnNext.setFont(new Font("나눔스퀘어 Bold", Font.PLAIN, 25));
+		btnNext.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String userInput = textField.getText().trim(); // textField에 입력된 값 가져오기
+				DocumentItem searchPatient = DBSearch.searchRecord(userInput); // DBSearch 클래스의 메서드 호출
+				lb_checking.setVisible(true);
+				
+				if (userInput.isEmpty()) { // 입력값이 비어 있을 경우 - 팝업 
+		            JOptionPane.showMessageDialog(frame, "입력값을 확인해주세요.", "입력 오류", JOptionPane.WARNING_MESSAGE);
+		        } else { 		            // 입력값이 비어 있지 않은 경우, DBSearch 클래스의 메서드 호출
+		            searchPatient = DBSearch.searchRecord(userInput);
+		            if (searchPatient != null) {
+		                // DB에서 레코드를 찾았을 경우
+		            	// 데이터 업데이트
+		                dataUpdater.updateData(searchPatient);
+		                // 다음 화면으로 이동
+		                cardLayout.show(cardPanel, "panel2");
+		 
+		            } else {
+		                // DB에서 레코드를 찾지 못했을 경우: 팝업 띄우기
+		                JOptionPane.showMessageDialog(frame, "입력 내용을 다시 확인해주세요.", "정보 없음", JOptionPane.WARNING_MESSAGE);
+		            }
+		        }
+			}
+		});
+		panel1.add(textField);
+		textField.setColumns(10);
+		panel1.add(btnBack);	
+		panel1.add(btnNext);
+	}
+	public JPanel getPanel() {
+		return panel1;
+	}
+}
+
+class Panel2 {
+	private JPanel panel2;
+	private JTable table;
+	private DefaultTableModel tableModel;
+	private JLabel lb_name;
+
+    public Panel2(DataUpdater dataUpdater, CardLayout cardLayout, JPanel cardPanel) {
+        initialize(dataUpdater, cardLayout, cardPanel);
+    }
+
+    private void initialize(DataUpdater dataUpdater, CardLayout cardLayout, JPanel cardPanel) {
+        panel2 = new JPanel();
+        panel2.setLayout(null);
+        JLabel lb2 = new JLabel("영수증 확인");
+        lb2.setBounds(100, 100, 163, 43);
+        lb2.setFont(new Font("나눔스퀘어 ExtraBold", Font.PLAIN, 28));
+
+//        Object[][] data = {
+//        		{"진료비", searchPatient.getFee()}, 
+//        		{"진단서", searchPatient.getMedicalReport()}, 
+//        		{"총 금액", searchPatient.getAmount()} 
+//        };
+//		Object[][] data = { //receiptItem
+//				{"진료비", "10000원"}, // 
+//				{"진단서", "20000원"}, 
+//				{"총 금액", "30000원"} 
+//		};
+//		String[] columns = {"항목","비용"};
+//		DefaultTableModel model = new DefaultTableModel(data, columns);		
+
+        // 테이블 모델 생성
+        tableModel = new DefaultTableModel();
+        // 테이블 생성 및 모델 설정
+        table = new JTable(tableModel);
+        // 데이터 표시할 헤더 열을 추가 (필요에 따라 수정)
+        tableModel.addColumn("항목");
+        tableModel.addColumn("값");
+        table.setRowHeight(45);
+        table.setFont(new Font("나눔스퀘어 Light", Font.PLAIN, 24));
+        table.setBounds(100, 150, 464, 135);
+        table.setBorder(new TitledBorder(null, "", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+        table.setSurrendersFocusOnKeystroke(true);
+        panel2.add(table);
+
+        lb_name = new JLabel("(님)의 결제 금액");
+        lb_name.setHorizontalAlignment(SwingConstants.CENTER);
+        lb_name.setForeground(new Color(0, 0, 0));
+        lb_name.setFont(new Font("나눔스퀘어 Light", Font.PLAIN, 20));
+        lb_name.setBounds(100, 120, 272, 32);
+        
+        JButton btnPayNow = new JButton("결제하기");
+        btnPayNow.setFont(new Font("나눔스퀘어 Bold", Font.PLAIN, 25));
+        btnPayNow.setBounds(100, 350, 151, 85);
+        btnPayNow.setBackground(new Color(27, 188, 155));
+        btnPayNow.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				cardLayout.show(cardPanel, "panel3");
+			}
+		});
+        panel2.add(btnPayNow);
+        
+        // 패널1에서 데이터 업데이트 시 호출될 메서드 설정
+        dataUpdater.setListener(new DataUpdateListener() {
+            @Override
+            public void onDataUpdate(DocumentItem data) {
+                // 업데이트된 데이터를 사용하여 JTable 모델 업데이트
+            	updateReceiptTable(data);
+            }
+        });
+    }
+
+    private void updateReceiptTable(DocumentItem data) {
+        // JTable 모델 업데이트
+        tableModel.setRowCount(0); // 기존 데이터 삭제
+
+        // 여기서 데이터를 추가 (필요에 따라 수정)
+        lb_name.setText(data.getName()+"(님)의 결제 금액");
+        tableModel.addRow(new Object[]{"진료비", data.getFee()});
+        tableModel.addRow(new Object[]{"진단서", data.getMedicalReport()});
+        tableModel.addRow(new Object[]{"총 금액", data.getAmount()});
+    }
+
+    public JPanel getPanel() {
+        return panel2;
+    }
+}
+class Panel3 {
+	private JPanel panel3;
+	
+	public Panel3(DataUpdater dataUpdater, CardLayout cardLayout, JPanel cardPanel) {
+        initialize(dataUpdater, cardLayout, cardPanel);
+    }
+
+    private void initialize(DataUpdater dataUpdater, CardLayout cardLayout, JPanel cardPanel) {
+        panel3 = new JPanel();
+        panel3.setLayout(null);
+        JLabel lb3 = new JLabel("결제 방법");
+        lb3.setFont(new Font("나눔스퀘어 ExtraBold", Font.PLAIN, 28));
+        lb3.setBounds(100, 100, 163, 43);
+        panel3.add(lb3);
+        
+        JLabel lb_selection = new JLabel("결제 수단을 선택하세요.");
+        lb_selection.setFont(new Font("나눔스퀘어 Bold", Font.PLAIN, 25));
+        lb_selection.setBounds(100, 162, 423, 43);
+        panel3.add(lb_selection);
+        JButton btnCard = new JButton("카드 결제");        
+        btnCard.setFont(new Font("나눔스퀘어 Bold", Font.PLAIN, 24));
+        btnCard.setBounds(100, 250, 137, 120);
+        btnCard.setBackground(new Color(27, 188, 155));
+        JButton btnEPay = new JButton("간편 결제");
+        btnEPay.setFont(new Font("나눔스퀘어 Bold", Font.PLAIN, 24));
+        btnEPay.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        	}
+        });
+        btnEPay.setBounds(250, 250, 129, 120);
+        btnEPay.setEnabled(false);
+        
+        JProgressBar pgBar = new JProgressBar();
+        pgBar.setForeground(new Color(27, 188, 155));
+        pgBar.setLocation(100, 391);
+        pgBar.setSize(279, 17);
+        pgBar.setStringPainted(true); //문자열로 퍼센트 표시
+        JLabel lb_completion = new JLabel("결제가 완료되었습니다 !");
+        lb_completion.setHorizontalAlignment(SwingConstants.CENTER);
+        lb_completion.setForeground(new Color(0, 0, 0));
+        lb_completion.setFont(new Font("나눔스퀘어 Light", Font.PLAIN, 20));
+        lb_completion.setBounds(100, 418, 272, 32);
+        JButton btnPrescription = new JButton("처방전 확인");
+        btnPrescription.setFont(new Font("나눔스퀘어 Bold", Font.PLAIN, 24));
+        btnPrescription.setBounds(145, 461, 181, 96);
+        pgBar.setVisible(false);  //초기 상태 = 안보이게
+        lb_completion.setVisible(false); 
+        btnPrescription.setVisible(false);
+        
+        btnCard.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+            	pgBar.setVisible(true);
+                pgBar.setStringPainted(true); // 퍼센트 보이게
+
+                SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        for (int i = 0; i <= 10; i++) {
+                            int progressValue = i * 10; // progressValue 선언 및 초기화
+                            pgBar.setValue(progressValue);
+                            pgBar.setString(progressValue + "%");
+                            Thread.sleep(160); // 200ms(=2초) 대기
+                        }
+                        return null;
+                    }
+                    @Override
+                    protected void done() {
+                        lb_completion.setVisible(true);
+                        btnPrescription.setVisible(true);
+                    }
+                };
+                worker.execute();            }
+        });        
+        panel3.add(btnCard);
+        panel3.add(btnEPay);
+        panel3.add(pgBar);
+        panel3.add(lb_completion);
+        panel3.add(btnPrescription);
+        btnPrescription.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				cardLayout.show(cardPanel, "panel4");
+			}
+		});
+        
+
+        
+    }
+	public JPanel getPanel() {
+        return panel3;
+    }
+}
+class Panel4 {
+	private JPanel panel4;
+	
+	public Panel4(DataUpdater dataUpdater, CardLayout cardLayout, JPanel cardPanel) {
+        initialize(dataUpdater, cardLayout, cardPanel);
+    }
+
+    private void initialize(DataUpdater dataUpdater, CardLayout cardLayout, JPanel cardPanel) {
+        panel4 = new JPanel();
+        panel4.setLayout(null);
+        JLabel lb4 = new JLabel("처방전 확인");
+        lb4.setBounds(100, 100, 135, 32);
+        lb4.setFont(new Font("나눔스퀘어 ExtraBold", Font.PLAIN, 28));
+        panel4.add(lb4);
+        
+        LocalDate date = LocalDate.now();
+        Object[][] data2 = { //prescriptionItem
+        		{"환자명", "김눈송"}, 			//searchResult.getName()
+				{"교부일", date},
+				{"발행기관", "육조 종합병원"},
+				{"진료과목", "내과"}, 			//searchResult.getSubject()
+				{"담당의", "장의사"}, 			//searchResult.getOffice()
+				{"처방내역", "아세트 아미노펜"}, 	//searchResult.getMedicine()
+				{"복약정보", "1정 2회"} 		//searchResult.getDoses()
+		};
+		String[] col = {"항목","내용"};
+		DefaultTableModel prescription = new DefaultTableModel(data2, col);		
+		JTable table2 = new JTable(prescription);
+		table2.setRowHeight(45);
+		table2.setFont(new Font("굴림체", Font.PLAIN, 23));
+		table2.setBounds(100, 150, 587, 315);
+		table2.setBorder(new TitledBorder(null, "", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+		table2.setSurrendersFocusOnKeystroke(true);
+        panel4.add(table2);
+        
+        JButton btnClose = new JButton("확인");
+        btnClose.setBounds(100, 500, 100, 85);
+        btnClose.setBackground(new Color(192, 192, 192));
+        btnClose.setFont(new Font("나눔스퀘어 Bold", Font.PLAIN, 25));
+        btnClose.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				//back to home Screen. 메인 클래스 객체 
+			}
+		});
+		JButton btnPharmacy = new JButton("주변 약국 보기");
+		btnPharmacy.setBounds(220, 500, 201, 85);
+		btnPharmacy.setBackground(new Color(27, 188, 155));
+		btnPharmacy.setFont(new Font("나눔스퀘어 Bold", Font.PLAIN, 25));
+		btnPharmacy.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				//주변 약국보기 페이지로 넘어가기
+				// new PharmacyApp(); ??
+			}
+		});
+		panel4.add(btnClose);
+		panel4.add(btnPharmacy);
+    }
+	
+	public JPanel getPanel() {
+        return panel4;
+    }
+}
